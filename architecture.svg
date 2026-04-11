@@ -8,6 +8,19 @@
     <filter id="shadow">
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.25"/>
     </filter>
+    <!-- Arrow markers -->
+    <marker id="arr-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#8b949e"/>
+    </marker>
+    <marker id="arr-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#58a6ff"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#3fb950"/>
+    </marker>
+    <marker id="arr-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#d2a8ff"/>
+    </marker>
   </defs>
 
   <!-- Background -->
@@ -17,21 +30,27 @@
   <text x="400" y="40" text-anchor="middle" font-size="22" font-weight="600" fill="url(#titleGrad)">claude-chat-mode</text>
   <text x="400" y="62" text-anchor="middle" font-size="12" fill="#8b949e">Turn Claude Code into a conversational partner — zero source code changes</text>
 
-  <!-- ═══ Layer 0: User Input ═══  x=100 w=600 → 100..700 -->
+  <!--
+    Layout grid (all layers flush):
+    Full-width boxes: x=100  w=600  → left=100  right=700  center=400
+    Chat card:        x=100  w=280  → left=100  right=380  center=240
+    Code card:        x=420  w=280  → left=420  right=700  center=560
+  -->
+
+  <!-- ═══ Layer 0: User Input ═══ -->
   <rect x="100" y="84" width="600" height="56" rx="10" fill="#161b22" stroke="#d2a8ff" stroke-width="1.5" filter="url(#shadow)"/>
   <text x="120" y="103" font-size="9" font-weight="600" fill="#d2a8ff" letter-spacing="0.8">LAYER 0</text>
   <text x="400" y="121" text-anchor="middle" font-size="14" font-weight="600" fill="#e6edf3">Your Message</text>
 
   <!-- Arrow: Layer 0 → Layer 1 -->
-  <line x1="400" y1="140" x2="400" y2="168" stroke="#30363d" stroke-width="2"/>
-  <polygon points="394,164 400,174 406,164" fill="#30363d"/>
+  <line x1="400" y1="140" x2="400" y2="174" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr-gray)"/>
 
-  <!-- ═══ Layer 1: Routing ═══  x=100 w=600 → 100..700 -->
+  <!-- ═══ Layer 1: Routing ═══ -->
   <rect x="100" y="178" width="600" height="76" rx="10" fill="#161b22" stroke="#d2a8ff" stroke-width="1.5" filter="url(#shadow)"/>
   <text x="120" y="198" font-size="9" font-weight="600" fill="#d2a8ff" letter-spacing="0.8">LAYER 1 — ROUTING</text>
   <text x="400" y="220" text-anchor="middle" font-size="14" font-weight="600" fill="#e6edf3">Three-Tier Mode Detection</text>
 
-  <!-- Tags inside routing — centered as a group -->
+  <!-- Tags inside routing — centered -->
   <rect x="188" y="230" width="130" height="18" rx="9" fill="rgba(210,168,255,0.15)"/>
   <text x="253" y="242" text-anchor="middle" font-size="10" fill="#d2a8ff">CLAUDE.md Adaptive</text>
   <rect x="326" y="230" width="52" height="18" rx="9" fill="rgba(88,166,255,0.15)"/>
@@ -41,17 +60,11 @@
   <rect x="446" y="230" width="90" height="18" rx="9" fill="rgba(210,153,34,0.15)"/>
   <text x="491" y="242" text-anchor="middle" font-size="10" fill="#d29922">auto-detect</text>
 
-  <!-- Split arrows: center(400) → chat center(240) and code center(560) -->
-  <line x1="340" y1="254" x2="240" y2="296" stroke="#58a6ff" stroke-width="2"/>
-  <polygon points="234,291 240,302 247,292" fill="#58a6ff"/>
-  <line x1="460" y1="254" x2="560" y2="296" stroke="#3fb950" stroke-width="2"/>
-  <polygon points="553,292 560,302 566,291" fill="#3fb950"/>
+  <!-- Split arrows: routing bottom → card centers -->
+  <line x1="340" y1="254" x2="244" y2="302" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+  <line x1="460" y1="254" x2="556" y2="302" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arr-green)"/>
 
-  <!-- ═══ Mode Cards ═══ -->
-  <!-- Chat: x=100 w=280 → 100..380, center=240 -->
-  <!-- Code: x=420 w=280 → 420..700, center=560 -->
-
-  <!-- Chat Mode Card -->
+  <!-- ═══ Chat Mode Card ═══ -->
   <rect x="100" y="306" width="280" height="148" rx="10" fill="#161b22" stroke="#58a6ff" stroke-width="1.5" filter="url(#shadow)"/>
   <text x="120" y="327" font-size="9" font-weight="600" fill="#58a6ff" letter-spacing="0.8">CHAT MODE</text>
   <rect x="120" y="336" width="56" height="16" rx="8" fill="rgba(88,166,255,0.15)"/>
@@ -67,7 +80,7 @@
   <text x="120" y="422" font-size="11" fill="#8b949e">unless explicitly requested.</text>
   <text x="120" y="437" font-size="11" fill="#8b949e">Paragraphs, not bullet lists.</text>
 
-  <!-- Code Mode Card -->
+  <!-- ═══ Code Mode Card ═══ -->
   <rect x="420" y="306" width="280" height="148" rx="10" fill="#161b22" stroke="#3fb950" stroke-width="1.5" filter="url(#shadow)"/>
   <text x="440" y="327" font-size="9" font-weight="600" fill="#3fb950" letter-spacing="0.8">CODE MODE</text>
   <rect x="440" y="336" width="56" height="16" rx="8" fill="rgba(63,185,80,0.15)"/>
@@ -83,15 +96,14 @@
   <text x="440" y="422" font-size="11" fill="#8b949e">active. Terse responses,</text>
   <text x="440" y="437" font-size="11" fill="#8b949e">immediate action on tasks.</text>
 
-  <!-- Auto-exit dashed arrows: card centers → output center -->
-  <text x="400" y="476" text-anchor="middle" font-size="10" fill="#d2a8ff" font-style="italic">auto-exit: coding task detected</text>
-  <line x1="240" y1="454" x2="400" y2="492" stroke="#d2a8ff" stroke-width="1.5" stroke-dasharray="5,4"/>
-  <line x1="560" y1="454" x2="400" y2="492" stroke="#d2a8ff" stroke-width="1.5" stroke-dasharray="5,4"/>
-  <polygon points="394,488 400,498 406,488" fill="#d2a8ff"/>
+  <!-- Auto-exit: dashed arrows from card centers → output layer -->
+  <text x="400" y="474" text-anchor="middle" font-size="10" fill="#d2a8ff" font-style="italic">auto-exit: coding task detected</text>
+  <line x1="240" y1="454" x2="396" y2="490" stroke="#d2a8ff" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arr-purple)"/>
+  <line x1="560" y1="454" x2="404" y2="490" stroke="#d2a8ff" stroke-width="1.5" stroke-dasharray="5,4"/>
 
-  <!-- ═══ Layer 2: Output ═══  x=100 w=600 → 100..700 -->
-  <rect x="100" y="504" width="600" height="68" rx="10" fill="#161b22" stroke="#d2a8ff" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="120" y="525" font-size="9" font-weight="600" fill="#d2a8ff" letter-spacing="0.8">LAYER 2 — OUTPUT</text>
-  <text x="400" y="546" text-anchor="middle" font-size="14" font-weight="600" fill="#e6edf3">Seamless Response</text>
-  <text x="400" y="562" text-anchor="middle" font-size="11" fill="#8b949e">One continuous conversation. Mode switches are invisible to the user.</text>
+  <!-- ═══ Layer 2: Output ═══ -->
+  <rect x="100" y="498" width="600" height="68" rx="10" fill="#161b22" stroke="#d2a8ff" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="120" y="519" font-size="9" font-weight="600" fill="#d2a8ff" letter-spacing="0.8">LAYER 2 — OUTPUT</text>
+  <text x="400" y="540" text-anchor="middle" font-size="14" font-weight="600" fill="#e6edf3">Seamless Response</text>
+  <text x="400" y="556" text-anchor="middle" font-size="11" fill="#8b949e">One continuous conversation. Mode switches are invisible to the user.</text>
 </svg>
