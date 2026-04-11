@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Chat Mode — Architecture</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent-chat: #58a6ff;
+    --accent-code: #3fb950;
+    --accent-auto: #d2a8ff;
+    --accent-warn: #d29922;
+    --glow-chat: rgba(88,166,255,0.15);
+    --glow-code: rgba(63,185,80,0.15);
+    --glow-auto: rgba(210,168,255,0.15);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; }
+
+  h1 {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent-chat), var(--accent-auto), var(--accent-code));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 48px;
+  }
+
+  /* ── Architecture Diagram ── */
+  .arch {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* Row */
+  .row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: stretch;
+  }
+  .row.single { justify-content: center; }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    flex: 1;
+    max-width: 420px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+  }
+  .card.chat { border-color: var(--accent-chat); }
+  .card.chat:hover { box-shadow: 0 8px 32px var(--glow-chat); }
+  .card.code { border-color: var(--accent-code); }
+  .card.code:hover { box-shadow: 0 8px 32px var(--glow-code); }
+  .card.auto { border-color: var(--accent-auto); }
+  .card.auto:hover { box-shadow: 0 8px 32px var(--glow-auto); }
+  .card.full { max-width: 868px; flex: unset; width: 100%; }
+
+  .card-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .card.chat .card-label { color: var(--accent-chat); }
+  .card.code .card-label { color: var(--accent-code); }
+  .card.auto .card-label { color: var(--accent-auto); }
+
+  .card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .card-body {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-weight: 500;
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+  .tag.blue  { background: rgba(88,166,255,0.15); color: var(--accent-chat); }
+  .tag.green { background: rgba(63,185,80,0.15);  color: var(--accent-code); }
+  .tag.purple{ background: rgba(210,168,255,0.15); color: var(--accent-auto); }
+  .tag.yellow{ background: rgba(210,153,34,0.15);  color: var(--accent-warn); }
+
+  .mono {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    background: rgba(110,118,129,0.15);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.82rem;
+  }
+
+  /* ── Flow Arrows ── */
+  .flow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+  .flow .arrow {
+    width: 40px;
+    height: 2px;
+    background: var(--border);
+    position: relative;
+  }
+  .flow .arrow::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -4px;
+    border: 5px solid transparent;
+    border-left: 6px solid var(--border);
+  }
+  .flow .arrow.down {
+    width: 2px;
+    height: 24px;
+    background: var(--border);
+  }
+  .flow .arrow.down::after {
+    right: -4px;
+    top: unset;
+    bottom: -1px;
+    border: 5px solid transparent;
+    border-top: 6px solid var(--border);
+  }
+  .flow.vertical {
+    flex-direction: column;
+  }
+
+  /* ── Diagram Section ── */
+  .diagram-section {
+    margin-bottom: 56px;
+  }
+  .section-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  /* ── SVG Flow ── */
+  .svg-flow {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+  }
+
+  /* ── File Tree ── */
+  .tree {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .tree .dir  { color: var(--accent-chat); }
+  .tree .file { color: var(--text); }
+  .tree .desc { color: var(--text-muted); font-size: 0.78rem; }
+
+  /* ── Interactive Demo ── */
+  .demo {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .demo-bar {
+    background: rgba(110,118,129,0.1);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .demo-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+  .demo-dot.r { background: #ff5f57; }
+  .demo-dot.y { background: #febc2e; }
+  .demo-dot.g { background: #28c840; }
+  .demo-bar-title {
+    flex: 1;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .demo-body {
+    padding: 20px 24px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    line-height: 1.8;
+    min-height: 220px;
+  }
+  .demo-line { margin-bottom: 4px; }
+  .demo-prompt { color: var(--accent-code); }
+  .demo-cmd { color: var(--text); }
+  .demo-output { color: var(--text-muted); }
+  .demo-switch { color: var(--accent-auto); font-style: italic; }
+
+  .demo-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .demo-tab {
+    flex: 1;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 0.82rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: inherit;
+  }
+  .demo-tab:hover { color: var(--text); background: rgba(110,118,129,0.08); }
+  .demo-tab.active.chat-tab {
+    color: var(--accent-chat);
+    border-bottom-color: var(--accent-chat);
+  }
+  .demo-tab.active.code-tab {
+    color: var(--accent-code);
+    border-bottom-color: var(--accent-code);
+  }
+  .demo-tab.active.auto-tab {
+    color: var(--accent-auto);
+    border-bottom-color: var(--accent-auto);
+  }
+  .demo-content { display: none; }
+  .demo-content.active { display: block; }
+
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .row { flex-direction: column; align-items: center; }
+    .card { max-width: 100%; }
+    .card.full { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>claude-chat-mode</h1>
+  <p class="subtitle">Turn Claude Code into a conversational partner — zero source code changes</p>
+
+  <!-- ── Section 1: Architecture ── -->
+  <div class="diagram-section">
+    <div class="section-title">Architecture Overview</div>
+
+    <div class="arch">
+      <!-- Layer 1: User Input -->
+      <div class="row single">
+        <div class="card auto full">
+          <div class="card-label">Layer 0 — User Input</div>
+          <div class="card-title">Your Message</div>
+          <div class="card-body">
+            Every message enters the same Claude Code session. The routing layer below decides how Claude responds — as a conversational partner or a coding assistant.
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div class="flow vertical">
+        <svg width="24" height="32" viewBox="0 0 24 32"><path d="M12 0 L12 24 M6 18 L12 26 L18 18" stroke="#30363d" stroke-width="2" fill="none"/></svg>
+      </div>
+
+      <!-- Layer 2: Routing -->
+      <div class="row single">
+        <div class="card auto full">
+          <div class="card-label">Layer 1 — Routing</div>
+          <div class="card-title">Three-Tier Mode Detection</div>
+          <div class="card-body">
+            <span class="tag purple">CLAUDE.md Adaptive Mode</span> auto-detects intent on every message.<br>
+            <span class="tag blue">/chat</span> and <span class="tag green">/code</span> slash commands give you an explicit manual override when auto-detection isn't enough.
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow split -->
+      <div class="flow vertical">
+        <svg width="320" height="48" viewBox="0 0 320 48">
+          <path d="M160 0 L160 16 M160 16 L60 40 M160 16 L260 40" stroke="#30363d" stroke-width="2" fill="none"/>
+          <path d="M54 34 L60 42 L66 34" stroke="#58a6ff" stroke-width="2" fill="none"/>
+          <path d="M254 34 L260 42 L266 34" stroke="#3fb950" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+
+      <!-- Layer 3: Two Modes -->
+      <div class="row">
+        <div class="card chat">
+          <div class="card-label">Chat Mode</div>
+          <div class="card-title"><span class="mono">/chat</span></div>
+          <div class="card-body">
+            <span class="tag blue">No tools</span>
+            <span class="tag blue">Natural prose</span>
+            <span class="tag blue">Warm tone</span>
+            <span class="tag blue">Deep thinking</span>
+            <br><br>
+            Replicate the claude.ai conversational experience inside Claude Code. Tools are suppressed unless explicitly requested. Responses flow in paragraphs, not bullet lists.
+          </div>
+        </div>
+        <div class="card code">
+          <div class="card-label">Code Mode</div>
+          <div class="card-title"><span class="mono">/code</span></div>
+          <div class="card-body">
+            <span class="tag green">All tools</span>
+            <span class="tag green">Concise</span>
+            <span class="tag green">Action-first</span>
+            <span class="tag green">Workflows</span>
+            <br><br>
+            Standard Claude Code behavior. Read, Edit, Bash, Grep — everything active. Terse responses, immediate action on coding tasks.
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow merge with auto-exit -->
+      <div class="flow vertical">
+        <svg width="320" height="48" viewBox="0 0 320 48">
+          <path d="M60 8 L160 32 M260 8 L160 32 M160 32 L160 48" stroke="#30363d" stroke-width="2" fill="none" stroke-dasharray="4,4"/>
+          <text x="160" y="16" text-anchor="middle" fill="#d2a8ff" font-size="11" font-family="system-ui">auto-exit: coding task detected</text>
+        </svg>
+      </div>
+
+      <!-- Layer 4: Output -->
+      <div class="row single">
+        <div class="card auto full">
+          <div class="card-label">Layer 2 — Output</div>
+          <div class="card-title">Seamless Response</div>
+          <div class="card-body">
+            The user sees one continuous conversation. Mode switches are invisible — no banners, no announcements. Chat mode auto-exits when a coding task is detected, so you never get stuck.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 2: File Structure ── -->
+  <div class="diagram-section">
+    <div class="section-title">File Structure</div>
+    <div class="tree">
+      <div><span class="dir">~/.claude/</span></div>
+      <div>&nbsp;&nbsp;<span class="file">CLAUDE.md</span> <span class="desc">← adaptive mode auto-detection</span></div>
+      <div>&nbsp;&nbsp;<span class="dir">commands/</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">chat.md</span> <span class="desc">← /chat slash command</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">code.md</span> <span class="desc">← /code slash command</span></div>
+    </div>
+  </div>
+
+  <!-- ── Section 3: Interactive Demo ── -->
+  <div class="diagram-section">
+    <div class="section-title">Live Demo</div>
+    <div class="demo">
+      <div class="demo-bar">
+        <div class="demo-dot r"></div>
+        <div class="demo-dot y"></div>
+        <div class="demo-dot g"></div>
+        <div class="demo-bar-title">Claude Code</div>
+        <div style="width:36px"></div>
+      </div>
+      <div class="demo-tabs">
+        <button class="demo-tab chat-tab active" onclick="showTab('chat')">Chat Mode</button>
+        <button class="demo-tab code-tab" onclick="showTab('code')">Code Mode</button>
+        <button class="demo-tab auto-tab" onclick="showTab('auto')">Auto-Exit</button>
+      </div>
+      <div class="demo-body">
+        <!-- Chat Tab -->
+        <div id="tab-chat" class="demo-content active">
+          <div class="demo-line"><span class="demo-prompt">$</span> <span class="demo-cmd">/chat What's the intuition behind attention?</span></div>
+          <div class="demo-line">&nbsp;</div>
+          <div class="demo-line"><span class="demo-output">The core intuition behind attention is surprisingly</span></div>
+          <div class="demo-line"><span class="demo-output">simple: not all inputs matter equally for a given</span></div>
+          <div class="demo-line"><span class="demo-output">output. When you're translating "The cat sat on the</span></div>
+          <div class="demo-line"><span class="demo-output">mat" and generating "Le", the word "chat" matters</span></div>
+          <div class="demo-line"><span class="demo-output">far more than "the" or "on"...</span></div>
+          <div class="demo-line">&nbsp;</div>
+          <div class="demo-line"><span class="demo-switch">↳ no tools called, natural prose, deep explanation</span></div>
+        </div>
+        <!-- Code Tab -->
+        <div id="tab-code" class="demo-content">
+          <div class="demo-line"><span class="demo-prompt">$</span> <span class="demo-cmd">/code fix the broken import in utils.py</span></div>
+          <div class="demo-line">&nbsp;</div>
+          <div class="demo-line"><span class="demo-output">Reading utils.py...</span></div>
+          <div class="demo-line"><span class="demo-output">Found: `from collections import OrderedDict`</span></div>
+          <div class="demo-line"><span class="demo-output">→ should be `from collections.abc import Mapping`</span></div>
+          <div class="demo-line"><span class="demo-output">Editing utils.py:3...</span></div>
+          <div class="demo-line"><span class="demo-output">Fixed.</span></div>
+          <div class="demo-line">&nbsp;</div>
+          <div class="demo-line"><span class="demo-switch">↳ tools active, concise, immediate action</span></div>
+        </div>
+        <!-- Auto Tab -->
+        <div id="tab-auto" class="demo-content">
+          <div class="demo-line"><span class="demo-prompt">$</span> <span class="demo-cmd">/chat</span></div>
+          <div class="demo-line"><span class="demo-switch">↳ entered chat mode</span></div>
+          <div class="demo-line">&nbsp;</div>
+          <div class="demo-line"><span class="demo-prompt">&gt;</span> <span class="demo-cmd">explain the observer pattern to me</span></div>
+          <div class="demo-line"><span class="demo-output">Think of a newspaper subscription...</span></div>
+          <div class="demo-line">&nbsp;</div>
+          <div class="demo-line"><span class="demo-prompt">&gt;</span> <span class="demo-cmd">now add it to src/events.py</span></div>
+          <div class="demo-line"><span class="demo-switch">↳ coding task detected → auto-exit to code mode</span></div>
+          <div class="demo-line"><span class="demo-output">Reading src/events.py... Editing...</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.demo-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('.' + name + '-tab').classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>
