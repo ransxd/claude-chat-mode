@@ -85,6 +85,10 @@ In chat mode, Claude will:
     code.md              ← /code slash command
 ```
 
+## Community
+
+This project was first shared and discussed on [LINUX DO](https://linux.do/).
+
 ## License
 
 MIT
