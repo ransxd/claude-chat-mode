@@ -6,6 +6,12 @@ Claude Code is incredible for coding, but its default personality is terse and t
 
 This project adds two slash commands (`/chat` and `/code`) that let you seamlessly switch between conversational and coding modes within the same session. No source code modifications, no ToS violations — pure configuration.
 
+## Architecture
+
+<p align="center">
+  <img src="architecture.svg" alt="Architecture Diagram" width="800">
+</p>
+
 ## How It Works
 
 Three layers work together:
