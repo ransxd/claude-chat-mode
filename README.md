@@ -34,8 +34,6 @@ Three layers work together:
 
 Chat mode includes **auto-exit**: if you send a clearly coding-related message (e.g., "fix this bug"), Claude silently switches back to code mode without needing `/code`.
 
-Open `diagram.html` in a browser to see the architecture diagram.
-
 ## Install
 
 ```bash
