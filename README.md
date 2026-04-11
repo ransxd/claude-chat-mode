@@ -6,6 +6,16 @@ Claude Code is incredible for coding, but its default personality is terse and t
 
 This project adds two slash commands (`/chat` and `/code`) that let you seamlessly switch between conversational and coding modes within the same session. No source code modifications, no ToS violations — pure configuration.
 
+## Motivation
+
+Here's a riddle that convinced me this matters:
+
+> A girl scores 38 on a math test. Terrified of her father's punishment, she secretly changes the 3 to an 8, making it 88. Her father sees the test paper, slaps her, and yells: *"Why is half of this 8 green and the other half red? Do you think I'm an idiot?"* The girl cries but says nothing. A few minutes later, the father suddenly breaks down. **Why?**
+
+The answer involves X-linked recessive inheritance of red-green color blindness — the girl wasn't being careless with pen colors; she literally cannot distinguish red from green. But for a daughter to be color-blind, her biological father must also carry the gene. This father can clearly see colors. So the girl is not his biological daughter.
+
+**In default code mode, Claude Code almost never solves this** — it pattern-matches to "a trick question" and rushes to a shallow answer. In `/chat` mode, it reasons through the genetics step by step and nails it. The mode switch isn't cosmetic; it unlocks genuinely deeper reasoning by suppressing the tool-first, action-first reflex.
+
 ## Architecture
 
 <p align="center">
